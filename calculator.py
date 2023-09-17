@@ -8,17 +8,17 @@ class Calculator():
         self.base_currency_url = "https://poe.ninja/api/data/currencyoverview?league={self.league}&type={item}"
         self.league = "Ancestor"
 
-        self.currency_df = self.get_currency_data()
-        self.item_df = self.get_item_data()
+        #self.currency_df = self.get_currency_data()
+        #self.item_df = self.get_item_data()
 
-        self.harvest_df = self.currency_df.filter(like='Lifeforce', axis=0)
-        self.delirium_df = self.item_df.filter(like='Delirium Orb', axis=0)
-        self.scarab_df = self.item_df.filter(like='Scarab', axis=0)
-        self.essence_df = self.item_df.filter(like='Essence', axis=0)
+        #self.harvest_df = self.currency_df.filter(like='Lifeforce', axis=0)
+        #self.delirium_df = self.item_df.filter(like='Delirium Orb', axis=0)
+        #self.scarab_df = self.item_df.filter(like='Scarab', axis=0)
+        #self.essence_df = self.item_df.filter(like='Essence', axis=0)
 
-        self.primal_lifeforce_unit_price = self.harvest_df.at["Primal Crystallised Lifeforce", 'chaosValue']
-        self.vivid_lifeforce_unit_price = self.harvest_df.at["Vivid Crystallised Lifeforce", 'chaosValue']
-        self.wild_lifeforce_unit_price = self.harvest_df.at["Wild Crystallised Lifeforce", 'chaosValue']
+        #self.primal_lifeforce_unit_price = self.harvest_df.at["Primal Crystallised Lifeforce", 'chaosValue']
+        #self.vivid_lifeforce_unit_price = self.harvest_df.at["Vivid Crystallised Lifeforce", 'chaosValue']
+        #self.wild_lifeforce_unit_price = self.harvest_df.at["Wild Crystallised Lifeforce", 'chaosValue']
 
     def template_replace(self, template_input, item_type):
         '''
