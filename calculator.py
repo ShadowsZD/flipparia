@@ -7,18 +7,19 @@ class Calculator():
         self.base_item_url = "https://poe.ninja/api/data/itemoverview?league={self.league}&type={item}"
         self.base_currency_url = "https://poe.ninja/api/data/currencyoverview?league={self.league}&type={item}"
         self.league = "Ancestor"
+        
+        self.currency_df = self.get_currency_data()
+        self.item_df = self.get_item_data()
 
-        #self.currency_df = self.get_currency_data()
-        #self.item_df = self.get_item_data()
+        self.harvest_df = self.currency_df.filter(like='Lifeforce', axis=0)
+        self.delirium_df = self.item_df.filter(like='Delirium Orb', axis=0)
+        self.scarab_df = self.item_df.filter(like='Scarab', axis=0)
+        self.essence_df = self.item_df.filter(like='Essence', axis=0)
 
-        #self.harvest_df = self.currency_df.filter(like='Lifeforce', axis=0)
-        #self.delirium_df = self.item_df.filter(like='Delirium Orb', axis=0)
-        #self.scarab_df = self.item_df.filter(like='Scarab', axis=0)
-        #self.essence_df = self.item_df.filter(like='Essence', axis=0)
-
-        #self.primal_lifeforce_unit_price = self.harvest_df.at["Primal Crystallised Lifeforce", 'chaosValue']
-        #self.vivid_lifeforce_unit_price = self.harvest_df.at["Vivid Crystallised Lifeforce", 'chaosValue']
-        #self.wild_lifeforce_unit_price = self.harvest_df.at["Wild Crystallised Lifeforce", 'chaosValue']
+        self.primal_lifeforce_unit_price = self.harvest_df.at["Primal Crystallised Lifeforce", 'chaosValue']
+        self.vivid_lifeforce_unit_price = self.harvest_df.at["Vivid Crystallised Lifeforce", 'chaosValue']
+        self.wild_lifeforce_unit_price = self.harvest_df.at["Wild Crystallised Lifeforce", 'chaosValue']
+        
 
     def template_replace(self, template_input, item_type):
         '''
@@ -112,22 +113,21 @@ class Calculator():
                     }
                     
                     avg_profit = profit_items.head(i)["chaosValue"].sum() * 10 / len(profit_items.head(i))
+                    print(avg_profit, avg_scenario, min_profit_margin)
 
-                    profit_items_str = ', '.join([str(elem) for elem in profit_items.head(i).index.tolist()])
-                    profit_info[profit_items_str] = []
+                    if  avg_profit - avg_scenario > min_profit_margin:
+                        profit_items_str = ', '.join([str(elem) for elem in profit_items.head(i).index.tolist()])
+                        profit_info[profit_items_str] = []
 
-                    print(f"Calculating profit when targetting {profit_items_str}")
+                        for scenario, info in scenarios.items():
+                            cost = info["cost"]
+                            tries = info["tries"]
 
-                    for scenario, info in scenarios.items():
-                        cost = info["cost"]
-                        tries = info["tries"]
+                            profit = avg_profit - cost
+                            profit_info[profit_items_str].append(f"""{scenario} cost: {cost:.0f} C. \nBase item: {min_value_item} C x {stack_size} = {min_value_item * stack_size} C. \nCrafting try: {craft_try_cost} C x {tries:.0f} = {craft_try_cost * tries:.0f} C. \nProfit: {int(profit)} C!\n""")
+            
 
-                        profit = avg_profit - cost
-
-                        profit_info[profit_items_str].append(f"""{scenario} cost: {cost:.0f} C.
-                                        Base item: {min_value_item} C x {stack_size} = {min_value_item * stack_size} C.
-                                        Crafting try: {craft_try_cost} C x {tries:.0f} = {craft_try_cost * tries:.0f} C.
-                                        Profit: {int(profit)} C!""")
+                   
         return profit_info
                     
     def delirium_profit_calc(self):
@@ -141,11 +141,13 @@ class Calculator():
 
     def profit_calc(self, item_class):
         if(item_class == "Delirium Orbs"):
-            return self.delirium_profit_calc()
+            profit_info = self.delirium_profit_calc()
         if(item_class == "Scarabs"):
-            return self.scarab_profit_calc()
+            profit_info = self.scarab_profit_calc()
         if(item_class == "Essences"):
-           return self.essence_profit_calc()
+           profit_info =  self.essence_profit_calc()
+        
+        return self.parse_output(profit_info, item_class)
 
     def refresh_prices(self):
         self.currency_df = self.get_currency_data()
@@ -159,6 +161,15 @@ class Calculator():
         self.primal_lifeforce_unit_price = self.harvest_df.at["Primal Crystallised Lifeforce", 'chaosValue']
         self.vivid_lifeforce_unit_price = self.harvest_df.at["Vivid Crystallised Lifeforce", 'chaosValue']
         self.wild_lifeforce_unit_price = self.harvest_df.at["Wild Crystallised Lifeforce", 'chaosValue']
+
+    def parse_output(self, profit_info, item_class):
+        parsed_profit = {}
+        if item_class == "Delirium Orbs":
+            for key in profit_info.keys():
+                parsed_profit[key.replace("Delirium Orb", "").replace(" , ", ", ")] = profit_info[key]
+        else:
+            return profit_info
+        return parsed_profit
 
 if __name__ == '__main__':
     profit_calc = Calculator()
