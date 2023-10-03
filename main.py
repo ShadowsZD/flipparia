@@ -1,25 +1,28 @@
 import wx
 import calculator
 import json
+import wx.lib.wordwrap as ww
 
 class MainWindow(wx.Frame):    
     def __init__(self, mode):
         super().__init__(parent=None, title='Flipparia', size=wx.Size(800,600))
         self.calc = calculator.Calculator()
-        self.panel = wx.Panel(self)
+        self.panel = wx.ScrolledWindow(self, style=wx.HSCROLL)
+
+        self.panel.SetScrollRate(0, 20)
 
         if mode == "debug":
             self.main_sizer = wx.StaticBoxSizer(wx.VERTICAL, self.panel)
             self.calculate_sizer = wx.StaticBoxSizer(wx.VERTICAL, self.panel)
 
             self.utility_sizer = wx.StaticBoxSizer(wx.HORIZONTAL, self.panel)
-            self.profit_sizer = wx.GridSizer(cols=1)
+            self.profit_sizer = wx.StaticBoxSizer(wx.VERTICAL, self.panel)
         else:
             self.main_sizer = wx.BoxSizer(wx.VERTICAL)
             self.calculate_sizer = wx.BoxSizer(wx.VERTICAL)
 
             self.utility_sizer = wx.BoxSizer(wx.HORIZONTAL)
-            self.profit_sizer = wx.GridSizer(cols=8)
+            self.profit_sizer = wx.BoxSizer(wx.VERTICAL)
 
         profit_list = ["Delirium Orbs", "Scarabs", "Essences"]
         
@@ -47,27 +50,45 @@ class MainWindow(wx.Frame):
         self.utility_sizer.Add(refresh_button, 0, wx.EXPAND, 5)
 
         self.panel.SetSizerAndFit(self.main_sizer)
-        self.Show()
+        self.panel.SetMinSize((500, 500)) 
+
+        # Create a sizer for the frame
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(self.panel, 1, wx.EXPAND | wx.ALL, 10)
+        self.SetSizerAndFit(sizer)
+
+        self.Centre()
+        self.Show(True)
 
     def profit_calc(self, event):
         data = self.calc.profit_calc(event.GetEventObject().Name)
-        print(event.GetEventObject().Name)
         self.hide_buttons()
         
-        #data = json.load(open("sample_data.json"))
-        self.profit_sizer.SetCols(8)
-        self.profit_sizer.SetRows(2)
+        print(data)
 
-        for targets, profit in data.items():
-            entry_sizer = wx.StaticBoxSizer(wx.VERTICAL, self.panel, label=targets)
-            self.profit_sizer.Add(entry_sizer, 0, wx.ALL, 5)
-           
-            for item in profit:
-                profit_details = wx.StaticText(self.panel, label=str(item))
-                profit_details.SetBackgroundColour(wx.GREEN)
-                entry_sizer.Add(profit_details, 0, wx.ALL, 5)
+        for tier, info in data.items():
+            if bool(info):
 
-        #self.profit_sizer.CalcRowsCols()
+                sizer = wx.StaticBoxSizer(wx.VERTICAL, self.panel, label=tier)
+
+                tier_sizer = wx.GridSizer(cols = 5)
+
+                sizer.Add(tier_sizer, 1, wx.EXPAND | wx.ALL, 10)
+                self.profit_sizer.Add(sizer, 0, wx.ALL, 5)
+
+                for targets, profit in info.items():
+                    label = ww.wordwrap(targets, 200, wx.ClientDC(self))
+                    label = wx.StaticText(self.panel, label=label)
+                    
+                    entry_sizer = wx.StaticBoxSizer(wx.VERTICAL, self.panel)
+                    entry_sizer.Add(label, 0, wx.ALL, 10)
+                    tier_sizer.Add(entry_sizer, 0, wx.ALL, 5)
+                
+                    for item in profit:
+                        profit_details = wx.StaticText(self.panel, label=str(item))
+                        profit_details.SetBackgroundColour(wx.GREEN)
+                        entry_sizer.Add(profit_details, 0, wx.ALL, 5)                
+        self.profit_sizer.Layout()
         self.panel.Layout()
                
             
@@ -82,6 +103,8 @@ class MainWindow(wx.Frame):
 
     def return_to_menu(self, event):
         self.show_buttons()
+        self.profit_sizer.ShowItems(False)
+        self.profit_sizer.Clear(deleteWindows=True)
     
     def create_item_profit_buttons(self, profit_list):
         for item in profit_list:

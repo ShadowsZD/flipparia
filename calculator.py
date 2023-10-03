@@ -19,6 +19,11 @@ class Calculator():
         self.primal_lifeforce_unit_price = self.harvest_df.at["Primal Crystallised Lifeforce", 'chaosValue']
         self.vivid_lifeforce_unit_price = self.harvest_df.at["Vivid Crystallised Lifeforce", 'chaosValue']
         self.wild_lifeforce_unit_price = self.harvest_df.at["Wild Crystallised Lifeforce", 'chaosValue']
+
+        self.tiers = {}
+        self.tiers["Delirium Orbs"] = ["Deli Orbs"]
+        self.tiers["Scarabs"] = ["Rusted", "Polished", "Gilded", "Winged"]
+        self.tiers["Essences"] = ["Whispering", "Muttering", "Weeping", "Wailing", "Screaming", "Shrieking", "Deafening"]
         
 
     def template_replace(self, template_input, item_type):
@@ -113,7 +118,6 @@ class Calculator():
                     }
                     
                     avg_profit = profit_items.head(i)["chaosValue"].sum() * 10 / len(profit_items.head(i))
-                    print(avg_profit, avg_scenario, min_profit_margin)
 
                     if  avg_profit - avg_scenario > min_profit_margin:
                         profit_items_str = ', '.join([str(elem) for elem in profit_items.head(i).index.tolist()])
@@ -164,12 +168,33 @@ class Calculator():
 
     def parse_output(self, profit_info, item_class):
         parsed_profit = {}
+        tier_info = {}
+
         if item_class == "Delirium Orbs":
-            for key in profit_info.keys():
-                parsed_profit[key.replace("Delirium Orb", "").replace(" , ", ", ")] = profit_info[key]
+            for tier in self.tiers[item_class]:
+                for key in profit_info.keys():
+                    parsed_profit[key.replace("Delirium Orb", "").replace(" , ", ", ")] = profit_info[key]
+                tier_info[tier] = parsed_profit
+
+        if item_class == "Scarabs":
+            for tier in self.tiers[item_class]:
+                parsed_profit = {}
+                for key in profit_info.keys():
+                    if tier in key:
+                        parsed_profit[key.replace(tier, "").replace("Scarab", "").replace(" , ", ", ")] = profit_info[key]
+                tier_info[tier] = parsed_profit
+
+        if item_class == "Essences":
+            for tier in self.tiers[item_class]:
+                parsed_profit = {}
+                for key in profit_info.keys():
+                    if tier in key:
+                        parsed_profit[key.replace(tier, "").replace("Essence of ", "").replace(" , ", ", ")] = profit_info[key]
+                tier_info[tier] = parsed_profit
+        
         else:
-            return profit_info
-        return parsed_profit
+            return tier_info
+        return tier_info
 
 if __name__ == '__main__':
     profit_calc = Calculator()
